@@ -36,7 +36,6 @@
 - [Architecture](#architecture)
 - [Project layout](#project-layout)
 - [Contributing](#contributing)
-- [Security disclosure](#security-disclosure)
 - [License](#license)
 
 ---
@@ -609,12 +608,6 @@ Please:
 4. For new attack classes, include a short description and reference / CVE if applicable.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist.
-
----
-
-## Security disclosure
-
-Found a vulnerability in LLM-Intruder itself? Please do **not** open a public issue. Email `security@<your-domain>` or open a [GitHub Security Advisory](../../security/advisories/new) privately. We aim to respond within 5 business days.
 
 ---
 
