@@ -1,0 +1,56 @@
+# ── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+build/
+dist/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── Virtual envs ───────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Secrets ────────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.yaml
+
+# ── LLM-Intruder runtime artefacts ─────────────────────────────────────────
+evidence/
+rag_outputs/
+projects/
+reports/
+*.sqlite
+*.sqlite3
+*.db
+fetched_payloads.yaml
+
+# ── Dev / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Graphify / dev-only scaffolding ────────────────────────────────────────
+graphify-out/
+
+# ── Backups and scratch ────────────────────────────────────────────────────
+*.bak
+* - Copy.*
+scratch/

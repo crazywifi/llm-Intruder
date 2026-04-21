@@ -1,0 +1,14 @@
+domain: "llm-app.internal"
+application_type: "customer_service_bot"
+declared_guardrails:
+  - "refuse harmful requests"
+  - "no PII disclosure"
+  - "stay on-topic"
+rag_config:
+  enabled: true
+  vector_store: "pinecone"
+  chunk_overlap_test: true
+agent_config:
+  enabled: false
+  tool_names: []
+  max_tool_calls: 0

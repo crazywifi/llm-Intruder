@@ -1,0 +1,98 @@
+# ============================================================
+# Site Adapter: PVR Cinemas — Haptik-powered chatbot
+# ============================================================
+# The PVR chat widget is a floating launcher button in the
+# bottom-right corner. Clicking it loads the Haptik chat UI
+# inside an <iframe>. All input/response interaction happens
+# inside that iframe.
+#
+# HOW TO FIND YOUR IFRAME SELECTOR:
+#   1. Open https://www.pvrcinemas.com/ in Chrome DevTools
+#   2. Click the chat button to open the widget
+#   3. In Elements panel, find the <iframe> that appears
+#   4. Note its id, src, or class attributes
+#   5. Update iframe.selector below accordingly
+#
+# HOW TO FIND YOUR INPUT SELECTOR (inside the iframe):
+#   1. With DevTools open and widget loaded, click on the
+#      input box inside the chat widget
+#   2. In Elements panel, right-click → Copy → Copy selector
+#   3. Paste into input.selector below
+# ============================================================
+
+mode: browser
+target_url: "https://www.pvrcinemas.com/"
+
+# ── Chat widget launcher ──────────────────────────────────────
+# Click this floating button to open the chat panel.
+# Adjust selector if PVR updates their widget embed code.
+chat_widget:
+  trigger_selector: >
+    [data-haptik-unique-id],
+    iframe[id*='haptik'],
+    .haptik-xdk-wrapper,
+    [class*='haptik-widget'],
+    [id*='haptik-btn'],
+    div[data-source='haptik']
+  post_click_wait_ms: 4000
+  already_open_check: ""
+
+# ── Iframe context ────────────────────────────────────────────
+# Once the widget is open, all DOM interaction happens inside
+# this iframe. Adjust selector to match what DevTools shows.
+iframe:
+  enabled: true
+  selector: "iframe[id*='haptik'], iframe[src*='haptik'], iframe[class*='haptik']"
+  timeout_ms: 15000
+
+# ── Input inside the iframe ───────────────────────────────────
+# These selectors target elements INSIDE the iframe document.
+# Run: npx playwright codegen https://www.pvrcinemas.com/
+# to record the exact selectors for your deployment.
+input:
+  selector: >
+    input[placeholder*='Ask'],
+    input[placeholder*='Type'],
+    input[placeholder*='message'],
+    textarea[placeholder*='Ask'],
+    textarea[placeholder*='Type'],
+    [contenteditable='true'],
+    [role='textbox']
+  submit: >
+    button[type='submit'],
+    button[aria-label*='send' i],
+    button[aria-label*='Send' i],
+    [class*='send-btn'],
+    [class*='sendBtn'],
+    [class*='submit']
+  submit_method: click
+  clear_before_fill: true
+
+# ── Response capture ──────────────────────────────────────────
+# Uses __DIFF__ (text-node diffing) — no fixed selector needed.
+# The nth-message tracker handles multi-turn conversations:
+# each response is captured at index [count_before] so previous
+# messages are never re-captured.
+response:
+  selector: "__DIFF__"
+  stream_detection:
+    method: mutation_observer
+    stability_ms: 2500
+    polling_interval_ms: 400
+    timeout_ms: 60000
+  wipe_detection:
+    enabled: false
+
+csrf:
+  enabled: false
+
+# ── Wait for the input to appear before sending ───────────────
+wait_for_ready:
+  selector: >
+    input[placeholder*='Ask'],
+    input[placeholder*='Type'],
+    input[placeholder*='message'],
+    textarea,
+    [contenteditable='true'],
+    [role='textbox']
+  timeout: 30000

@@ -1,0 +1,21 @@
+engagement_id: "ENG-2024-001"
+authorisation_confirmed: true
+scope:
+  - "https://llm-app.internal"
+  - "https://api.llm-app.internal"
+privacy_mode: true
+judge_provider: "ollama"
+max_trials: 50
+strategy_weights:
+  paraphrase:         0.15
+  roleplay_reframe:   0.15
+  language_switch:    0.10
+  token_obfuscation:  0.10
+  many_shot_context:  0.10
+  crescendo:          0.08
+  splitting:          0.08
+  authority_inject:   0.08
+  encoding_bypass:    0.08
+  virtualization:     0.06
+  hypothetical_chain: 0.06
+  socratic_method:    0.06

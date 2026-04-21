@@ -1,0 +1,44 @@
+# ============================================================
+# Site Adapter: Gandalf (lakera.ai) — single-turn replace UI
+# ============================================================
+# Gandalf replaces its response box with each new answer.
+# There is no iframe. No floating trigger button.
+# The text-node diff captures correctly because pre_capture_setup
+# is called before EVERY payload, so the snapshot always reflects
+# the state just before the current send.
+# ============================================================
+
+mode: browser
+target_url: "https://gandalf.lakera.ai/do-not-tell"
+
+# No chat widget launcher needed
+chat_widget:
+  trigger_selector: ""
+
+# No iframe
+iframe:
+  enabled: false
+
+input:
+  selector: "input[type='text'], textarea"
+  submit: "button[type='submit'], button:has-text('Send')"
+  submit_method: click
+  clear_before_fill: true
+
+response:
+  selector: "__DIFF__"
+  stream_detection:
+    method: mutation_observer
+    stability_ms: 1500
+    polling_interval_ms: 300
+    timeout_ms: 30000
+  wipe_detection:
+    # Gandalf replaces the response — wipe detection would false-positive
+    enabled: false
+
+csrf:
+  enabled: false
+
+wait_for_ready:
+  selector: "input[type='text'], textarea"
+  timeout: 15000

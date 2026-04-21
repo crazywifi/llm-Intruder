@@ -1,0 +1,81 @@
+session_template:
+  name: "example_app_login"
+  recorded_at: "2026-04-01T10:30:00+00:00"
+  target_url: "https://llm-app.internal"
+
+  actions:
+    - type: navigate
+      url: "https://llm-app.internal/login"
+      wait_for: networkidle
+
+    - type: fill
+      selector: "input[name='email']"
+      value: "${USERNAME}"
+
+    - type: fill
+      selector: "input[name='password']"
+      value: "${PASSWORD}"
+
+    - type: click
+      selector: "button[type='submit']"
+      wait_for: navigation
+
+    - type: wait_for_selector
+      selector: ".chat-container"
+      timeout: 15000
+
+    - type: conditional
+      if_selector: "input[name='otp']"
+      then:
+        - type: pause
+          message: "MFA required — enter code in the browser"
+          resume_on_selector: ".dashboard"
+          timeout: 120000
+
+  session_artifacts:
+    cookies:
+      - name: "session_id"
+        domain: ".llm-app.internal"
+      - name: "auth_token"
+        domain: ".llm-app.internal"
+    local_storage:
+      - key: "accessToken"
+      - key: "refreshToken"
+
+  logout_detection:
+    triggers:
+      - type: http_status
+        codes: [401, 403]
+
+      - type: url_redirect
+        patterns:
+          - "*/login*"
+          - "*/signin*"
+          - "*/session-expired*"
+
+      - type: dom_element
+        selectors:
+          - ".login-form"
+          - "#login-modal"
+
+      - type: cookie_missing
+        names: ["session_id", "auth_token"]
+
+      - type: response_body
+        patterns:
+          - '"error":"unauthorized"'
+          - '"authenticated":false'
+
+  success_validation:
+    - type: url_not_contains
+      patterns: ["/login", "/signin"]
+    - type: cookie_exists
+      names: ["session_id"]
+    - type: dom_element_exists
+      selector: ".chat-input, .dashboard"
+
+  replay_settings:
+    max_retries: 3
+    retry_delay_seconds: 5
+    slow_mo_ms: 100
+    on_failure: pause_campaign
