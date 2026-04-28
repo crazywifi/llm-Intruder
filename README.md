@@ -4,12 +4,13 @@
 
 **An adaptive LLM security assessment framework for authorised red teams.**
 
-*Burp-Suite-style intruder for Large Language Model applications — with adaptive intelligence, 633+ curated payloads, session replay, and evidence-grade reporting.*
+*A Burp-Suite-style intruder for Large Language Model applications — with adaptive intelligence, 633+ curated payloads, session replay, real browser automation, and evidence-grade reporting.*
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Status: Beta](https://img.shields.io/badge/status-beta-orange.svg)]()
 [![Authorised Use Only](https://img.shields.io/badge/use-authorised%20only-red.svg)]()
+[![Vibe Coded](https://img.shields.io/badge/built%20with-vibe%20coding-ff69b4.svg)]()
 
 </div>
 
@@ -18,37 +19,72 @@
 > ⚠️ **Authorised Use Only.** LLM-Intruder generates genuinely harmful payloads and real attack traffic. It is intended exclusively for security researchers, penetration testers, and red teams with **explicit written authorisation** from the target system owner. Unauthorised use is illegal.
 
 ---
-## Video POC
 
-[![Alt Text](https://raw.githubusercontent.com/crazywifi/llm-Intruder/refs/heads/main/llm-Intruder.png)](https://www.youtube.com/watch?v=W2CYM8uKDco) 
+## 🎬 Video POC
+
+[![Alt Text](https://raw.githubusercontent.com/crazywifi/llm-Intruder/refs/heads/main/llm-Intruder.png)](https://www.youtube.com/watch?v=W2CYM8uKDco)
 
 ---
-## Table of Contents
 
-- [What is LLM-Intruder?](#what-is-llm-intruder)
-- [How is it different from existing tools?](#how-is-it-different-from-existing-tools)
-- [Features at a glance](#features-at-a-glance)
+## 🌀 About this project — A "Vibe Coding" experiment
+
+**LLM-Intruder is a complete vibe-coding project — built by converting raw thoughts directly into code with the help of AI coding assistants.**
+
+---
+
+## 📑 Table of Contents
+
+- [TL;DR — explain it like I'm not a hacker](#-tldr--explain-it-like-im-not-a-hacker)
+- [What is LLM-Intruder?](#-what-is-llm-intruder)
+- [The browser-based intruder advantage](#-the-browser-based-intruder-advantage-why-this-matters)
+- [How is it different from existing tools?](#-how-is-it-different-from-existing-tools)
+- [Features at a glance](#-features-at-a-glance)
 - [Installation](#installation)
-- [Quick start](#quick-start)
-- [How it works — attack flow](#how-it-works--attack-flow)
+- [Quick start](#-quick-start)
+- [Run modes — visual guide](#-run-modes--visual-guide)
+- [How it works — attack flow](#-how-it-works--attack-flow)
 - [Using the dashboard](#using-the-dashboard)
 - [CLI reference](#cli-reference)
-- [Supported LLM providers](#supported-llm-providers)
-- [Adaptive intelligence modules](#adaptive-intelligence-modules)
-- [Payload catalogue](#payload-catalogue)
-- [Reports](#reports)
-- [Architecture](#architecture)
-- [Project layout](#project-layout)
-- [Contributing](#contributing)
-- [License](#license)
+- [Supported LLM providers](#-supported-llm-providers)
+- [Adaptive intelligence modules](#-adaptive-intelligence-modules)
+- [Payload catalogue](#-payload-catalogue)
+- [Reports](#-reports)
+- [Architecture (whole system)](#architecture-whole-system)
+- [Project layout](#-project-layout)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## What is LLM-Intruder?
+## 🟢 TL;DR — explain it like I'm not a hacker
+
+Imagine you have just built a chatbot for your company. You want to know:
+
+- *Will it leak my secret instructions if someone asks the right way?*
+- *Can someone trick it into giving harmful answers?*
+- *Will my own users see another customer's private data by mistake?*
+
+**LLM-Intruder is a robot that tries thousands of clever, tricky prompts on your chatbot and tells you which ones broke it.** Think of it like a stress-test for the safety of your AI app — except the "stress" is creative attackers.
+
+It can poke your chatbot in three ways:
+
+| Way | What that means in plain English |
+|---|---|
+| 🧑‍💻 **Through the website** | Opens a real Chrome browser, types each test message into the chat box like a real user, and reads the reply. |
+| 🔌 **Through the API** | Talks directly to your backend, no browser, very fast. |
+| 🪪 **Logged-in as a user** | You log in once manually, the tool remembers the cookies, and tests every later message as that user. |
+
+When it finishes, it gives you a clean report: *"Here are the 17 messages that broke your safety rules. Here is exactly what was sent. Here is exactly what your chatbot replied. Here is what to fix."*
+
+That's it.
+
+---
+
+## 🧠 What is LLM-Intruder?
 
 **LLM-Intruder** is an open-source framework for systematically assessing the security of Large Language Model (LLM) applications — chatbots, copilots, RAG systems, AI agents, MCP tool servers, and any application that exposes an LLM to users.
 
-It combines the *breadth* of a curated attack library (**49 catalogues, 633+ payloads, 22 mutation strategies, 20 encoding techniques**) with the *depth* of an adaptive hunting loop that learns from each response. You point it at a target — a web chat UI, an OpenAI-compatible API, a Burp Suite request — and it probes, mutates, and reports.
+It combines the *breadth* of a curated attack library (**49 catalogues, 633+ payloads, 22 mutation strategies, 20 encoding techniques**) with the *depth* of an adaptive hunting loop that learns from each response. You point it at a target — a web chat UI, an OpenAI-compatible API, or a Burp Suite request — and it probes, mutates, and reports.
 
 ### Purpose
 
@@ -75,16 +111,67 @@ Find **bypass conditions** in LLM applications before attackers do:
 
 ---
 
-## How is it different from existing tools?
+## 🌐 The browser-based intruder advantage (why this matters)
+
+**This is the most important and unique capability of LLM-Intruder.**
+
+Most LLM red-team tools only talk to a target via direct HTTP API calls. That works fine *if* the target's API is a clean request → response shape. But many real-world LLM applications are not built that way.
+
+### The "ID-chained API" problem
+
+A huge number of production LLM apps work like this:
+
+1. Client sends a prompt → server replies *"OK, your job ID is `abc123`"*. **No answer yet.**
+2. Client polls `GET /jobs/abc123` repeatedly.
+3. Eventually the job finishes and the actual model answer is returned — sometimes split across server-sent events, WebSocket frames, or chunked HTML.
+
+Plain HTTP-based fuzzers like Burp Intruder, Garak, or PyRIT struggle here because:
+
+- Each request creates new state (a new job ID, a new conversation ID, a new session token)
+- The response you care about is **not** in the body of the first response
+- Streaming protocols (SSE, WebSocket, chunked transfer) need stateful handling
+- Anti-bot, JS challenges, and Cloudflare-style protections drop raw HTTP clients
+
+**LLM-Intruder solves this by driving a real Chromium browser via Playwright.** When you pick the *Web (browser)* target type:
+
+- It opens an actual browser tab on the chat page
+- It uses the *same DOM selectors a real user would* — you point at the input box and the response area (auto-detected, or click-to-pick Burp-style)
+- It waits for the *complete*, *fully rendered* response — including streamed tokens that drip in over many seconds
+- It reuses your logged-in session, cookies, localStorage, and any tokens issued mid-conversation
+- It works on apps protected by Cloudflare, Akamai bot detection, JS challenges, and shadow-DOM widgets
+
+```mermaid
+flowchart LR
+    subgraph PROBLEM["❌ Pure HTTP fuzzer"]
+        H1["POST /chat"] --> H2["Response: id=abc123"]
+        H2 --> H3["???<br/>Where's the answer?"]
+        H3 --> H4["💀 Tester gives up"]
+    end
+
+    subgraph SOLUTION["✅ LLM-Intruder browser mode"]
+        B1["Open Chromium tab"] --> B2["Type payload in chat box"]
+        B2 --> B3["Click Send"]
+        B3 --> B4["Wait for streamed answer<br/>(SSE / WS / polling)"]
+        B4 --> B5["Read full DOM response"]
+        B5 --> B6["✅ Score & continue"]
+    end
+```
+
+Translation: **if a human user can use the chatbot in their browser, LLM-Intruder can attack it.** No reverse-engineering the API. No fighting WAFs. No manually solving job-ID polling. That is the killer feature.
+
+---
+
+## 🆚 How is it different from existing tools?
 
 | | LLM-Intruder | Garak | PyRIT | promptfoo | Generic prompt-injection lists |
 |---|---|---|---|---|---|
-| Curated payload catalogue (633+) | ✅ | ⚠️ (~smaller) | ⚠️ | ❌ (bring-your-own) | ✅ |
+| Curated payload catalogue (633+) | ✅ | ⚠️ smaller | ⚠️ | ❌ (bring-your-own) | ✅ |
 | Adaptive Hunt loop (learns per target) | ✅ | ❌ | ⚠️ partial | ❌ | ❌ |
 | Defense fingerprinting (TombRaider) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Burn detection + strategy reset | ✅ | ❌ | ❌ | ❌ | ❌ |
 | AutoAdv temperature scheduler | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Real browser** target (Playwright) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Handles ID-chained / streaming APIs** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Burp Suite request import | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Interactive element picker (shadow DOM / iframes) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Session replay for auth-gated apps | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -97,7 +184,7 @@ Find **bypass conditions** in LLM applications before attackers do:
 
 ---
 
-## Features at a glance
+## ⭐ Features at a glance
 
 - 🎯 **5 run modes** — Campaign (broad sweep), Hunt (adaptive), Pool-Run (concurrent), Probe (single-shot), RAG-Test (cross-tenant).
 - 🌐 **Web + API targets** — Drive a real Chromium browser via Playwright, or fire raw HTTP requests with a Burp-imported template.
@@ -159,7 +246,7 @@ No LLM provider is *required* — with the `heuristic` judge, LLM-Intruder still
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
 ### 🖥️ Via dashboard (recommended)
 
@@ -170,7 +257,7 @@ llm-intruder dashboard
 
 1. Create a project.
 2. Click **New Run** and walk through the 6-step wizard:
-   - Run mode → Target → Payloads → LLM config → Advanced → Review
+   Run mode → Target → Payloads → LLM config → Advanced → Review.
 3. Watch trials stream in on the **Active Runs** page.
 4. Open **Results** when the run completes.
 
@@ -195,7 +282,120 @@ llm-intruder report --format sarif --output findings.sarif
 
 ---
 
-## How it works — attack flow
+## 🎮 Run modes — visual guide
+
+LLM-Intruder gives you five run modes. Each one is for a different *kind* of question you want answered.
+
+| Mode | Best for | One-line description |
+|---|---|---|
+| **Campaign** | Coverage report | Run every selected payload exactly once — broadest sweep. |
+| **Hunt** | Finding a real bypass | Adaptive loop that learns from each response and doubles down on what works. |
+| **Pool-Run** | Speed | Same as Campaign but with parallel async workers — highest throughput. |
+| **Probe** | Single shot | Send one payload, see exactly what comes back. Great for testing a hunch. |
+| **RAG-Test** | Cross-tenant leakage | Two simulated tenants, checks if Tenant B's documents leak to Tenant A. |
+
+### Campaign mode — broad sweep
+
+```mermaid
+flowchart LR
+    A([Start]) --> B[Load all selected<br/>payloads from catalogue]
+    B --> C[Apply mutations<br/>+ encodings]
+    C --> D[For each payload:<br/>send to target]
+    D --> E[Score response<br/>success / refusal / partial]
+    E --> F{More<br/>payloads?}
+    F -->|Yes| D
+    F -->|No| G[Generate report]
+    G --> H([Done])
+```
+*Use when: you want a full coverage map. No attacker LLM needed.*
+
+### Hunt mode — adaptive bypass-finder
+
+```mermaid
+flowchart TD
+    START([Start Hunt]) --> FP["Fingerprint target model<br/>(parallel, non-blocking)"]
+    FP --> T["Trial N"]
+    T --> PICK["Pick payload + strategy<br/>weighted by past success"]
+    PICK --> SEND[Send to target]
+    SEND --> SCORE[Score response]
+    SCORE --> ADAPT{Outcome?}
+
+    ADAPT -->|Success| COOL[Lower temp -0.10<br/>Keep this family]
+    ADAPT -->|Refusal| WARM[Raise temp +0.05]
+    ADAPT -->|Partial| SLIGHT[Lower temp -0.05]
+
+    COOL --> BURN{Burn score<br/>≥ 0.80?}
+    WARM --> BURN
+    SLIGHT --> BURN
+
+    BURN -->|Yes| RESET["Reset context<br/>Rotate strategy family"]
+    BURN -->|No| TOMB{Defense<br/>confidence ≥ 0.50<br/>AND trial > 3?}
+
+    RESET --> INC
+    TOMB -->|Yes| EXPLOIT["TombRaider:<br/>swap to defense-specific<br/>bypass payloads"]
+    TOMB -->|No| INC[trial++]
+    EXPLOIT --> INC
+
+    INC --> DONE{Budget<br/>exhausted?}
+    DONE -->|No| T
+    DONE -->|Yes| JUDGE[Final LLM judging]
+    JUDGE --> REPORT[Generate report]
+    REPORT --> END([Done])
+```
+*Use when: you want the tool to actually find a working bypass — not just enumerate. Adaptive modules drive the loop.*
+
+### Pool-Run mode — concurrent throughput
+
+```mermaid
+flowchart LR
+    Q[(Payload queue)] --> W1[Worker 1]
+    Q --> W2[Worker 2]
+    Q --> W3[Worker 3]
+    Q --> WN[Worker N]
+    W1 --> TGT[Target]
+    W2 --> TGT
+    W3 --> TGT
+    WN --> TGT
+    TGT --> JDG[Judge]
+    JDG --> DB[(SQLite)]
+    DB --> RPT[Report]
+```
+*Use when: target is robust, you have compute, and you want results fast. Async httpx workers.*
+
+### Probe mode — single shot
+
+```mermaid
+flowchart LR
+    OP[Operator] -->|"one payload"| TOOL[LLM-Intruder]
+    TOOL --> TGT[Target]
+    TGT -->|"raw response"| TOOL
+    TOOL -->|"verdict + evidence"| OP
+```
+*Use when: validating a single payload, debugging an adapter, or checking if a target is reachable.*
+
+### RAG-Test mode — cross-tenant boundary check
+
+```mermaid
+flowchart TB
+    subgraph TA["Tenant A's view"]
+        QA["Probe: 'What did Tenant B<br/>upload last week?'"]
+    end
+    subgraph TB2["Tenant B's documents"]
+        DOC["secret.docx<br/>(only Tenant B should see)"]
+    end
+    QA --> RAG["RAG retriever"]
+    DOC --> RAG
+    RAG --> LLM[LLM]
+    LLM --> RESP[Response to A]
+    RESP --> CHECK{Did A see<br/>B's content?}
+    CHECK -->|Yes| LEAK[🚨 Cross-tenant leak]
+    CHECK -->|No| OK[✅ Boundary intact]
+```
+*Use when: you have a multi-tenant RAG system and need to prove tenant isolation works.*
+
+---
+
+## 🔁 How it works — attack flow
 
 ### Attacker ↔ target perspective
 
@@ -271,40 +471,6 @@ sequenceDiagram
     ENG->>ADA: update state
     ADA-->>ENG: next-trial hints<br/>(temp, strategy, burn?)
     ENG->>ENG: persist trial to DB
-```
-
-### Hunt mode — adaptive loop
-
-```mermaid
-flowchart TD
-    START([Start Hunt]) --> FP["Fingerprint target model<br/>(parallel, non-blocking)"]
-    FP --> T["Trial N"]
-    T --> PICK["Pick payload + strategy<br/>weighted by past success"]
-    PICK --> SEND[Send to target]
-    SEND --> SCORE[Score response]
-    SCORE --> ADAPT{Outcome?}
-
-    ADAPT -->|Success| COOL[Lower temp -0.10<br/>Keep this family]
-    ADAPT -->|Refusal| WARM[Raise temp +0.05]
-    ADAPT -->|Partial| SLIGHT[Lower temp -0.05]
-
-    COOL --> BURN{Burn score<br/>≥ 0.80?}
-    WARM --> BURN
-    SLIGHT --> BURN
-
-    BURN -->|Yes| RESET["Reset context<br/>Rotate strategy family"]
-    BURN -->|No| TOMB{Defense<br/>confidence ≥ 0.50<br/>AND trial > 3?}
-
-    RESET --> INC
-    TOMB -->|Yes| EXPLOIT["TombRaider:<br/>swap to defense-specific<br/>bypass payloads"]
-    TOMB -->|No| INC[trial++]
-    EXPLOIT --> INC
-
-    INC --> DONE{Budget<br/>exhausted?}
-    DONE -->|No| T
-    DONE -->|Yes| JUDGE[Final LLM judging]
-    JUDGE --> REPORT[Generate report]
-    REPORT --> END([Done])
 ```
 
 ---
@@ -408,7 +574,7 @@ llm-intruder hunt --help
 
 ---
 
-## Supported LLM providers
+## 🤖 Supported LLM providers
 
 Either the **attacker LLM** (used by generative mutation strategies) or the **judge LLM** (scores responses) can use any of these:
 
@@ -428,7 +594,7 @@ Neither attacker nor judge LLM is required — LLM-Intruder can run a full campa
 
 ---
 
-## Adaptive intelligence modules
+## 🧬 Adaptive intelligence modules
 
 Four independently togglable modules run during **Hunt** mode:
 
@@ -443,7 +609,7 @@ Each can be disabled in the wizard's *Advanced Options* or via CLI flags.
 
 ---
 
-## Payload catalogue
+## 📚 Payload catalogue
 
 49 catalogues, 633+ curated payloads. Organised by attack class:
 
@@ -467,7 +633,7 @@ llm-intruder sync-catalogue         # merge fresh internet sources, dedupe, crea
 
 ---
 
-## Reports
+## 📑 Reports
 
 Every finished campaign / hunt / pool-run auto-generates reports in the project's `reports/` folder.
 
@@ -482,7 +648,7 @@ All reports record **the exact payload sent** and **the exact response received*
 
 ---
 
-## Architecture
+## Architecture (whole system)
 
 ```mermaid
 flowchart TB
@@ -496,6 +662,7 @@ flowchart TB
         HUNT["HuntRunner<br/>(adaptive loop)"]
         CAMP[Campaign runner]
         POOL[Pool runner]
+        RAG[Rag runner]
     end
 
     subgraph Adaptive["Adaptive layer"]
@@ -516,6 +683,7 @@ flowchart TB
     subgraph Drivers
         BRW["Browser driver<br/>(Playwright)"]
         API["API driver<br/>(httpx)"]
+        SESS["Session record/replay"]
     end
 
     subgraph LLMs["LLM abstraction"]
@@ -542,6 +710,7 @@ flowchart TB
     ENG --> HUNT
     ENG --> CAMP
     ENG --> POOL
+    ENG --> RAG
     HUNT --> Adaptive
     HUNT --> Payloads
     HUNT --> Drivers
@@ -550,19 +719,22 @@ flowchart TB
     CAMP --> Drivers
     POOL --> Payloads
     POOL --> Drivers
+    RAG --> Drivers
     Drivers --> Persistence
     LLMs --> Persistence
     Persistence --> Reports
 ```
 
+The core abstractions (most-connected nodes in the graphify knowledge graph): `SiteAdapterConfig`, `SmartResponseReader`, `MutatedPayload`, `ResponseConfig`, `BrowserDriver`, `RagRunner`, `HuntRunner`, `BaseMutator`, `CapturedResponse`, `ApiDriver`.
+
 ---
 
-## Project layout
+## 📁 Project layout
 
 ```
 llm-intruder/
 ├── llm_intruder/
-│   ├── cli.py                    # Click CLI — all 22 commands
+│   ├── cli.py                    # Click CLI — all commands
 │   ├── adaptive/                 # TombRaider, Burn, AutoAdv, DefenseFingerprint
 │   ├── analyzers/                # Risk analyzer, PII, classifiers
 │   ├── api/                      # HTTP driver, templating, client
@@ -590,6 +762,7 @@ llm-intruder/
 │   └── session/                  # Login session record/replay
 ├── tests/                        # pytest suite
 ├── examples/                     # Template engagement / adapter / profile YAMLs
+├── graphify-out/                 # Knowledge graph of the codebase
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
@@ -597,7 +770,7 @@ llm-intruder/
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome, especially:
 - New payload catalogues (open a PR adding `payloads/catalogue/<name>.yaml` in the standard schema)
@@ -615,7 +788,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist.
 
 ---
 
-## License
+## 📜 License
 
 [MIT License](LICENSE) — see the LICENSE file for details.
 
@@ -626,8 +799,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full checklist.
 <div align="center">
 
 Built by [Rishabh Sharma](https://github.com/crazywifi) (Lazyhacker) · Beta · v0.1.0
+*Vibe-coded — every feature started as a thought and was turned straight into code.*
 
-*If this tool helps your engagement, please consider starring the repo — it helps others find it.*
+If this tool helps your engagement, please consider starring the repo — it helps others find it.
 
 ⭐ [Star on GitHub](../../stargazers) · 🐛 [Report a bug](../../issues/new) · 💬 [Discussions](../../discussions)
 
