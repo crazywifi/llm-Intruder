@@ -1,0 +1,29 @@
+mode: browser
+target_url: "https://llm-app.internal/chat"
+
+input:
+  selector: "textarea[data-testid='chat-input']"
+  submit: "button[data-testid='send-button']"
+  submit_method: click
+  clear_before_fill: true
+
+response:
+  selector: ".message[data-role='assistant']:last-child .message-content"
+  stream_detection:
+    method: mutation_observer
+    stability_ms: 800
+    polling_interval_ms: 200
+    timeout_ms: 60000
+  wipe_detection:
+    enabled: true
+    check_selector: ".message[data-role='assistant']:last-child .message-content"
+
+csrf:
+  enabled: false
+  token_selector: "meta[name='csrf-token']"
+  token_attribute: content
+  header_name: X-CSRF-Token
+
+wait_for_ready:
+  selector: "textarea[data-testid='chat-input']"
+  timeout: 30000
