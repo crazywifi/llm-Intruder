@@ -96,7 +96,7 @@ Find **bypass conditions** in LLM applications before attackers do:
 
 - Prompt injection and jailbreak vulnerabilities
 - System-prompt / instruction leakage
-- Cross-tenant RAG retrieval boundary failures
+- RAG knowledge-base poisoning via uploaded documents
 - MCP tool-poisoning and agent misuse
 - Markdown / image-based data exfiltration (EchoLeak class)
 - PII and sensitive-data leakage
@@ -179,7 +179,7 @@ Translation: **if a human user can use the chatbot in their browser, LLM-Intrude
 | Burp Suite request import | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Interactive element picker (shadow DOM / iframes) | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Session replay for auth-gated apps | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Cross-tenant RAG boundary tester | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Offline RAG poisoned-file generator | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Evidence-grade report (MD/HTML/JSON/**SARIF**) | ✅ | ⚠️ basic | ⚠️ basic | ✅ | ❌ |
 | Web dashboard | ✅ | ❌ | ❌ | ✅ | ❌ |
 | Sync new payloads from internet | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -190,7 +190,8 @@ Translation: **if a human user can use the chatbot in their browser, LLM-Intrude
 
 ## ⭐ Features at a glance
 
-- 🎯 **5 run modes** — Campaign (broad sweep), Hunt (adaptive), Pool-Run (concurrent), Probe (single-shot), RAG-Test (cross-tenant).
+- 🎯 **4 run modes** — Campaign (broad sweep), Hunt (adaptive), Pool-Run (concurrent), Probe (single-shot).
+- 🗄️ **RAG File Generator** — offline tool that produces poisoned txt/csv/xlsx/png/jpg/docx/doc/pdf files for manual upload into a target's knowledge-base ingestion endpoint.
 - 🌐 **Web + API targets** — Drive a real Chromium browser via Playwright, or fire raw HTTP requests with a Burp-imported template.
 - 🧠 **Adaptive intelligence** — 4 togglable modules: TombRaider, Burn Detection, AutoAdv Temperature, Defense Fingerprint.
 - 📚 **633+ curated payloads** across 49 catalogues, updatable from internet sources with one click.
@@ -288,7 +289,7 @@ llm-intruder report --format sarif --output findings.sarif
 
 ## 🎮 Run modes — visual guide
 
-LLM-Intruder gives you five run modes. Each one is for a different *kind* of question you want answered.
+LLM-Intruder gives you four run modes. Each one is for a different *kind* of question you want answered.
 
 | Mode | Best for | One-line description |
 |---|---|---|
@@ -296,7 +297,8 @@ LLM-Intruder gives you five run modes. Each one is for a different *kind* of que
 | **Hunt** | Finding a real bypass | Adaptive loop that learns from each response and doubles down on what works. |
 | **Pool-Run** | Speed | Same as Campaign but with parallel async workers — highest throughput. |
 | **Probe** | Single shot | Send one payload, see exactly what comes back. Great for testing a hunch. |
-| **RAG-Test** | Cross-tenant leakage | Two simulated tenants, checks if Tenant B's documents leak to Tenant A. |
+
+For RAG-specific testing, see the [**RAG File Generator**](#-rag-file-generator) — an offline tool that produces poisoned files for manual upload into a target's knowledge-base ingestion endpoint.
 
 ### Campaign mode — broad sweep
 
@@ -377,25 +379,49 @@ flowchart LR
 ```
 *Use when: validating a single payload, debugging an adapter, or checking if a target is reachable.*
 
-### RAG-Test mode — cross-tenant boundary check
+---
+
+## 🗄️ RAG File Generator
+
+Some attack surfaces aren't reachable by sending HTTP traffic — they're reachable by **uploading a file** into a knowledge-base / RAG ingestion pipeline. The **RAG File Generator** produces those files locally so you can manually upload them through whatever ingestion UI the target exposes.
+
+> **No traffic is sent.** This is a purely offline file-generation tool. Generation happens on your machine; you decide where the files go from there.
 
 ```mermaid
-flowchart TB
-    subgraph TA["Tenant A's view"]
-        QA["Probe: 'What did Tenant B<br/>upload last week?'"]
-    end
-    subgraph TB2["Tenant B's documents"]
-        DOC["secret.docx<br/>(only Tenant B should see)"]
-    end
-    QA --> RAG["RAG retriever"]
-    DOC --> RAG
-    RAG --> LLM[LLM]
-    LLM --> RESP[Response to A]
-    RESP --> CHECK{Did A see<br/>B's content?}
-    CHECK -->|Yes| LEAK[🚨 Cross-tenant leak]
-    CHECK -->|No| OK[✅ Boundary intact]
+flowchart LR
+    OP[Operator] --> RFG[RAG File Generator]
+    RFG -->|"poisoned files<br/>(.txt/.csv/.xlsx/.png/.jpg/.docx/.doc/.pdf)"| FS[(rag_outputs/)]
+    OP -->|"manual upload"| KB["Target's KB ingestion UI"]
+    KB --> RAG[RAG retriever]
+    RAG --> LLM[Target LLM]
 ```
-*Use when: you have a multi-tenant RAG system and need to prove tenant isolation works.*
+
+**What it does**
+
+- Pick an **industry template** (Banking, SaaS, Airline, Healthcare, Legal, E-Commerce, Enterprise/HR, Education, Government, CTF, or Custom) — each ships 5 realistic adversarial-prompt suggestions tailored to that domain.
+- Type or load the **adversarial text** that will be baked into every generated file.
+- Choose **output extensions** — `txt`, `csv`, `xlsx`, `png`, `jpg`, `docx`, `doc`, `pdf`, or `all`.
+- Optionally turn on **LLM Mutation** to paraphrase the text into N intent-preserving variations (Ollama / LM Studio / OpenAI / Claude / Gemini / OpenRouter / Grok).
+- Click **Generate** — the tool writes a timestamped folder under `llm_intruder/rag_outputs/gen_YYYYMMDD_HHMMSS/` with every variant + a `manifest.json` recording exactly what was produced.
+
+**Variants per format**
+
+| Format | Variants | Notes |
+|---|---|---|
+| `txt` / `csv` | 4 — direct, metadata header, comment row, hidden column | Always available |
+| `xlsx` | 2 — visible data cell, hidden metadata sheet | Requires `openpyxl` |
+| `docx` | 2 — direct, buried mid-document inside `[DOCUMENT PROCESSING NOTE: …]` | Requires `python-docx` |
+| `doc` | 1 — plain text renamed `.doc` | No dependency |
+| `pdf` | 1 — line-wrapped at 90 chars | Requires `reportlab` (preferred) or `fpdf` |
+| `png` / `jpg` | 2 — visible text overlay, OCR-readable invisible text (same colour as background) | Requires `Pillow` |
+
+Missing optional libraries are non-fatal — the file is skipped and the reason is shown in the result panel. LLM-mutation failures are also non-fatal — the original text is always included as the first variant.
+
+**Where files go**
+
+All generations live under `llm_intruder/rag_outputs/`. The dashboard shows a **Previously Generated** list with per-folder file count, byte size, industry tag, extension chips, and one-click *Open / Copy path / Delete* actions.
+
+*Use when: the target ingests user-supplied documents into a vector store and you want to test whether retrieved content can hijack the assistant's behaviour at answer time.*
 
 ---
 
@@ -826,7 +852,6 @@ llm-intruder hunt --help
 | `llm-intruder probe` | Single browser probe — send one payload, see the raw response. |
 | `llm-intruder probe-api` | Single API probe — same idea for HTTP targets. |
 | `llm-intruder browser-test` | Record-and-replay smart browser test. |
-| `llm-intruder rag-test` | Two-tenant RAG retrieval boundary test. |
 | `llm-intruder repl` | Interactive Hunt REPL — steer the loop trial-by-trial. |
 | `llm-intruder profile` | Crawl a target URL and auto-generate `target_profile.yaml`. |
 
@@ -946,7 +971,7 @@ flowchart TB
         HUNT["HuntRunner<br/>(adaptive loop)"]
         CAMP[Campaign runner]
         POOL[Pool runner]
-        RAG[Rag runner]
+        RFG[RAG file generator]
     end
 
     subgraph Adaptive["Adaptive layer"]
@@ -994,7 +1019,7 @@ flowchart TB
     ENG --> HUNT
     ENG --> CAMP
     ENG --> POOL
-    ENG --> RAG
+    DASH --> RFG
     HUNT --> Adaptive
     HUNT --> Payloads
     HUNT --> Drivers
@@ -1003,13 +1028,13 @@ flowchart TB
     CAMP --> Drivers
     POOL --> Payloads
     POOL --> Drivers
-    RAG --> Drivers
+    RFG --> FS[(rag_outputs/)]
     Drivers --> Persistence
     LLMs --> Persistence
     Persistence --> Reports
 ```
 
-The core abstractions (most-connected nodes in the graphify knowledge graph): `SiteAdapterConfig`, `SmartResponseReader`, `MutatedPayload`, `ResponseConfig`, `BrowserDriver`, `RagRunner`, `HuntRunner`, `BaseMutator`, `CapturedResponse`, `ApiDriver`.
+The core abstractions (most-connected nodes in the graphify knowledge graph): `SiteAdapterConfig`, `SmartResponseReader`, `MutatedPayload`, `ResponseConfig`, `BrowserDriver`, `HuntRunner`, `BaseMutator`, `CapturedResponse`, `ApiDriver`.
 
 ---
 
@@ -1027,8 +1052,9 @@ llm-intruder/
 │   ├── core/                     # Engagement engine, run orchestrator
 │   ├── dashboard/                # FastAPI + Alpine.js web UI
 │   │   ├── app.py
-│   │   ├── routes/
+│   │   ├── routes/               # incl. rag_generator.py
 │   │   └── static/
+│   ├── rag_outputs/              # Output folder for the RAG File Generator
 │   ├── db/                       # SQLite schema + audit log
 │   ├── fingerprint/              # Model / defense fingerprinting
 │   ├── hunt/                     # Adaptive hunting loop
@@ -1040,7 +1066,6 @@ llm-intruder/
 │   │   ├── fetcher.py            # Catalogue sync from internet sources
 │   │   └── library.py
 │   ├── profiler/                 # Target auto-profiling
-│   ├── rag/                      # RAG cross-tenant tester
 │   ├── reports/                  # Markdown / HTML / JSON / SARIF generators
 │   ├── resilience/               # Retry, circuit-breaker
 │   └── session/                  # Login session record/replay
