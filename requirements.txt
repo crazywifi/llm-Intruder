@@ -20,8 +20,25 @@ uvicorn[standard]>=0.30
 python-multipart>=0.0.9
 websockets>=12.0
 
+# ── RAG File Generator (poisoned file outputs) ──────────────────────────
+# Required for the dashboard's RAG File Generator to produce all formats.
+# Each is guarded with try/except, so missing libs only disable that one
+# format rather than crashing the run — but the UI advertises every format,
+# so we install them by default.
+Pillow>=10.0           # png / jpg image payloads
+openpyxl>=3.1          # xlsx workbooks (data-cell + hidden _meta sheet)
+python-docx>=1.1       # docx documents (direct + buried variants)
+reportlab>=4.0         # pdf generation (primary)
+fpdf2>=2.7             # pdf generation (fallback when reportlab fails)
+
 # ── Optional: LLM judge/attacker providers ──────────────────────────────
 # Uncomment the ones you plan to use.
-# anthropic>=0.34        # Claude judge/attacker
-# openai>=1.40           # OpenAI judge/attacker
-# google-generativeai>=0.7  # Gemini judge/attacker
+# anthropic>=0.34            # Claude judge/attacker
+# openai>=1.40               # OpenAI judge/attacker
+# google-generativeai>=0.7   # Gemini judge/attacker
+# huggingface_hub>=0.24      # Hugging Face Inference API driver
+
+# ── Optional: alternative browser-driving provider ──────────────────────
+# Only needed if you switch the browser provider away from Playwright.
+# browser-use>=0.1.40
+# langchain-openai>=0.1.20
