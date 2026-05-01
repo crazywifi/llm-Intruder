@@ -22,7 +22,7 @@
 
 ## 🎬 Video POC
 
-[![Alt Text](https://raw.githubusercontent.com/crazywifi/llm-Intruder/refs/heads/main/llm-Intruder.png)](https://www.youtube.com/watch?v=W2CYM8uKDco)
+[![Alt Text](https://raw.githubusercontent.com/crazywifi/llm-Intruder/refs/heads/main/llm-Intruder.png)](https://www.youtube.com/watch?v=P7877VIF_JE)
 
 ---
 
