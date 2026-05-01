@@ -230,6 +230,10 @@ source .venv/bin/activate        # Linux / macOS
 # 3. Install the package + dev deps
 pip install -e ".[dev,dashboard]"
 
+or
+
+pip install -e . --force-reinstall --no-deps
+
 # 4. Install the Playwright Chromium runtime
 playwright install chromium
 
