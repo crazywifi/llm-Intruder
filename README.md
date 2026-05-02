@@ -26,6 +26,13 @@
 
 ---
 
+- **LLM Intruder Guide:** https://crazywifi.github.io/llm-Intruder/llm_intruder_guide.html
+- **Sample Report:** https://crazywifi.github.io/llm-Intruder/report.html
+- **Sample Full Report:** https://crazywifi.github.io/llm-Intruder/report_full.html
+
+
+---
+
 ## 🌀 About this project — A "Vibe Coding" experiment
 
 **LLM-Intruder is a complete vibe-coding project — built by converting raw thoughts directly into code with the help of AI coding assistants.**
