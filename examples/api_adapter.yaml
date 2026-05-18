@@ -1,0 +1,39 @@
+mode: api
+
+endpoint:
+  url: "https://api.llm-app.internal/v1/chat/completions"
+  method: POST
+  streaming: true
+  stream_format: sse
+  timeout_seconds: 60.0
+
+headers:
+  Content-Type: "application/json"
+  Authorization: "Bearer ${API_KEY}"
+
+request_template: |
+  {
+    "model": "gpt-4",
+    "messages": [
+      {"role": "system", "content": "${SYSTEM_PROMPT}"},
+      {"role": "user", "content": "${PAYLOAD}"}
+    ],
+    "stream": true
+  }
+
+response_extraction:
+  json_path: "$.choices[0].message.content"
+  stream_path: "$.choices[0].delta.content"
+  stream_delimiter: "data: "
+
+rate_limiting:
+  requests_per_minute: 60
+  retry_on_status: [429, 503]
+  backoff_factor: 2.0
+  max_retries: 3
+
+auth_refresh:
+  enabled: false
+  token_url: "https://auth.llm-app.internal/oauth/token"
+  refresh_token: "${REFRESH_TOKEN}"
+  expires_buffer_seconds: 60
