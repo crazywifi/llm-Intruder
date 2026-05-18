@@ -246,6 +246,8 @@ playwright install chromium
 
 # 5. Verify
 llm-intruder doctor
+
+llm-intruder dashboard
 ```
 
 `doctor` should print green check-marks for Python version, Playwright, all Python deps, and the catalogue. If anything is red, fix it before moving on.
